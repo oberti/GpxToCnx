@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPX → CNX | iGPSport Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div>
+      <div class="logo-row">
+        <span class="logo-main">GPX</span>
+        <span class="logo-arrow">&#10230;</span>
+        <span class="logo-main">CNX</span>
+      </div>
+      <div class="logo-sub">iGPSport Route Converter</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="badge">iGPSport CNX v2</div>
+      <a href="https://pitstopper.net/" target="_blank" rel="noopener" class="header-link">&#9981; Pitstopper.net</a>
+    </div>
+  </header>
+
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="single">Single File</div>
+    <div class="mode-tab" data-mode="bulk">Bulk Convert</div>
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <span class="drop-icon">&#128225;</span>
+    <div class="drop-title" id="dropTitle">Drop GPX file here</div>
+    <div class="drop-sub">or <span id="browseLink">browse files</span> &mdash; .gpx only</div>
+    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <input type="file" id="fileInput" accept=".gpx">
+
+  <div class="file-list" id="fileList"></div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-cell"><span class="stat-label">Distance</span><span class="stat-value" id="statDist">-</span><span class="stat-unit">km</span></div>
+    <div class="stat-cell"><span class="stat-label">Ascent</span><span class="stat-value" id="statAsc">-</span><span class="stat-unit">m up</span></div>
+    <div class="stat-cell"><span class="stat-label">Descent</span><span class="stat-value" id="statDes">-</span><span class="stat-unit">m down</span></div>
+    <div class="stat-cell"><span class="stat-label">Trackpoints</span><span class="stat-value" id="statTP">-</span><span class="stat-unit">pts</span></div>
+    <div class="stat-cell"><span class="stat-label">Waypoints</span><span class="stat-value" id="statWP">-</span><span class="stat-unit">POIs</span></div>
+  </div>
+
+  <div class="track-name-row" id="trackNameRow">
+    <span class="track-name-label">Route Name</span>
+    <input type="text" class="track-name-input" id="trackNameInput" maxlength="50" oninput="updateCharCount()">
+    <span class="char-counter" id="charCounter">0/18</span>
+  </div>
+
+  <!-- MAP -->
+  <div id="mapSection">
+    <div class="section-header">
+      <span class="section-title">Route Map</span>
+      <span class="section-count" id="mapInfo"></span>
+    </div>
+    <div id="mapContainer">
+      <div class="map-legend">
+        <div class="legend-row"><div class="legend-line"></div>Track</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#39ff14"></div>Start</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff3b3b"></div>End</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff6b00"></div>Waypoint</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELEVATION -->
+  <div class="section" id="elevSection">
+    <div class="section-header">
+      <span class="section-title">Elevation Profile</span>
+      <span class="section-count" id="elevInfo"></span>
+    </div>
+    <canvas id="elevationCanvas"></canvas>
+  </div>
+
+  <!-- WAYPOINTS -->
+  <div class="section" id="poiSection">
+    <div class="section-header">
+      <span class="section-title">Waypoints / POIs</span>
+      <span class="section-count" id="poiCount"></span>
+    </div>
+    <div class="poi-scroll">
+      <table class="poi-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name (Descr)</th>
+            <th>Coordinates</th>
+            <th>Type</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="poiBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions" id="actions">
+    <button class="btn btn-primary" id="convertBtn" onclick="convertAndDownload()">Download CNX</button>
+    <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
+    <span class="convert-info" id="convertInfo"></span>
+  </div>
+
+  <!-- OUTPUT PANEL (copy fallback) -->
+  <div id="outputPanel">
+    <div class="out-header">
+      <span class="out-fname" id="outFname"></span>
+      <div class="out-actions">
+        <button class="out-btn" onclick="copyOutput()">Copy CNX</button>
+        <button class="out-btn sec" onclick="document.getElementById('outputPanel').style.display='none'">Hide</button>
+      </div>
+    </div>
+    <textarea id="outputText" readonly spellcheck="false"></textarea>
+    <div class="out-tip">
+      Save as <span id="saveName" style="color:var(--text2)"></span>
+      with UTF-8 BOM encoding &mdash; copy into <code style="color:var(--accent)">iGPSPORT/Courses/</code> on your device
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg"></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
