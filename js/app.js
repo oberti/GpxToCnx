@@ -1,4 +1,4 @@
-var APP_VERSION = '1.0.1';
+var APP_VERSION = '1.0.3';
 
 // ═══════════════════════════════════════════════════════════
 // GPX to CNX Converter + Water Finder
@@ -159,19 +159,37 @@ function renderBulkTable() {
   document.querySelector('#poiSection .section-title').textContent = 'Files to Convert';
   document.getElementById('poiCount').textContent = bulkFiles.length + ' files';
   var thead = document.querySelector('.poi-table thead tr');
-  thead.innerHTML = '<th>#</th><th>File</th><th>Distance</th><th>Waypoints</th><th></th>';
+  thead.innerHTML = '<th>#</th><th>File</th><th>Distance</th><th>POIs</th><th>Water Score</th><th></th>';
   var tbody = document.getElementById('poiBody');
   tbody.innerHTML = '';
   bulkFiles.forEach(function(item, i) {
     if (!item.data) return;
     var tr = document.createElement('tr');
     var dist = (item.data.stats.dist/1000).toFixed(2);
-    var wpts = item.data.waypoints.length;
+
+    // Water Score for this file (only if water search was done)
+    var scoreHtml = '<span style="font-size:11px;color:var(--text3)">&#8212; search first</span>';
+    if (item.waterAdded || item.data.waypoints.some(function(w){return w._water;})) {
+      var waterPois = _waterResults.filter(function(p){ return p._bulkFileIdx === i; });
+      if (waterPois.length) {
+        var ws = calcWaterScore(waterPois, item.data.trackpoints,
+          parseInt(document.getElementById('waterDist').value)||100);
+        var color = ws.score>=8?'#39ff14':ws.score>=6?'#00e5ff':ws.score>=4?'#ff9900':'#ff3b3b';
+        var filled  = Array(Math.round(ws.score)+1).join('\u2588');
+        var unfilled= Array(10-Math.round(ws.score)+1).join('\u2591');
+        scoreHtml = '<div style="display:flex;align-items:center;gap:6px">'
+          +'<span style="font-family:var(--mono);font-size:11px;color:'+color+';letter-spacing:-1px">'+filled+unfilled+'</span>'
+          +'<span style="font-size:12px;font-weight:500;color:'+color+'">'+ws.score+'</span>'
+          +'</div>';
+      }
+    }
+
     tr.innerHTML =
       '<td class="poi-index">'+(i<9?'0':'')+(i+1)+'</td>'
-      +'<td style="font-size:12px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escHtml(buildCnxFilename(item.data))+'">'+escHtml(buildCnxFilename(item.data))+'</td>'
+      +'<td style="font-size:12px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+escHtml(buildCnxFilename(item.data))+'">'+escHtml(buildCnxFilename(item.data))+'</td>'
       +'<td class="poi-coords">'+dist+' km</td>'
-      +'<td class="poi-coords">'+wpts+' POIs'+(item.waterAdded?' &#128167;':'')+'</td>'
+      +'<td class="poi-coords">'+item.data.waypoints.length+(item.data.waypoints.some(function(w){return w._water;})?'  &#128167;':'')+'</td>'
+      +'<td>'+scoreHtml+'</td>'
       +'<td><button class="out-btn sec" style="padding:5px 10px;font-size:10px;font-family:var(--mono);letter-spacing:1px" onclick="downloadSingleBulkCNX('+i+')">\u2b07 CNX</button></td>';
     tbody.appendChild(tr);
   });
@@ -618,12 +636,123 @@ function findWaterBulk(){
   );
 }
 
+function calcWaterScore(pois, tps, maxDist) {
+  if (!pois.length || !tps.length) return {score:0, label:'None', coverage:0, gapKm:0, potablePct:0};
+
+  // A — Coverage: % of track within maxDist of at least one source
+  var step = Math.max(1, Math.floor(tps.length / 200)); // sample 200 points max
+  var covered = 0, total = 0;
+  for (var i = 0; i < tps.length; i += step) {
+    total++;
+    for (var j = 0; j < pois.length; j++) {
+      var d = minDistToTrack(pois[j].lat, pois[j].lon, [tps[i]]);
+      if (d <= maxDist) { covered++; break; }
+    }
+  }
+  var coveragePct = total > 0 ? covered / total : 0;
+
+  // B — Average gap between sources along track (km)
+  // Sort pois by position along track
+  var poisWithIdx = pois.map(function(poi) {
+    var bestI = 0, bestD = Infinity;
+    for (var i = 0; i < tps.length; i++) {
+      var dd = Math.abs(tps[i].lat - poi.lat) + Math.abs(tps[i].lon - poi.lon);
+      if (dd < bestD) { bestD = dd; bestI = i; }
+    }
+    return { poi: poi, tpIdx: bestI };
+  });
+  poisWithIdx.sort(function(a, b){ return a.tpIdx - b.tpIdx; });
+
+  // Cumulative distance along track
+  function hav2(p1,p2){var R=6371000,f1=p1.lat*Math.PI/180,f2=p2.lat*Math.PI/180,df=(p2.lat-p1.lat)*Math.PI/180,dl=(p2.lon-p1.lon)*Math.PI/180,a=Math.sin(df/2)*Math.sin(df/2)+Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)*Math.sin(dl/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+  var cumDist = [0];
+  for (var i = 1; i < tps.length; i++) cumDist.push(cumDist[i-1] + hav2(tps[i-1], tps[i]));
+  var totalDistKm = cumDist[tps.length-1] / 1000;
+
+  var avgGapKm = 0;
+  if (poisWithIdx.length > 1) {
+    var gaps = [];
+    for (var i = 1; i < poisWithIdx.length; i++) {
+      var gapM = cumDist[poisWithIdx[i].tpIdx] - cumDist[poisWithIdx[i-1].tpIdx];
+      gaps.push(gapM / 1000);
+    }
+    avgGapKm = gaps.reduce(function(s,v){return s+v;},0) / gaps.length;
+  } else {
+    avgGapKm = totalDistKm; // only 1 source = gap = full route
+  }
+
+  // C — Quality: % of potable sources
+  var potable = pois.filter(function(p){
+    var t=p.tags||{};
+    return t.drinking_water==='yes'||t.amenity==='drinking_water';
+  }).length;
+  var potablePct = pois.length > 0 ? potable / pois.length : 0;
+
+  // Score: A(40%) + B(40%) + C(20%)
+  // Coverage: 1.0 = 10pts, 0.0 = 0pts
+  var scoreA = coveragePct * 10;
+
+  // Gap: <5km=10, 5-10=8, 10-20=6, 20-30=4, 30-50=2, >50=0
+  var scoreB = avgGapKm < 5  ? 10 :
+               avgGapKm < 10 ? 8  :
+               avgGapKm < 20 ? 6  :
+               avgGapKm < 30 ? 4  :
+               avgGapKm < 50 ? 2  : 0;
+
+  var scoreC = potablePct * 10;
+
+  var score = Math.round((scoreA * 0.4 + scoreB * 0.4 + scoreC * 0.2) * 10) / 10;
+
+  var label = score >= 8 ? 'Excellent' :
+              score >= 6 ? 'Good'      :
+              score >= 4 ? 'Fair'      :
+              score >= 2 ? 'Poor'      : 'Critical';
+
+  return { score: score, label: label, coverage: Math.round(coveragePct*100),
+           gapKm: avgGapKm.toFixed(1), potablePct: Math.round(potablePct*100) };
+}
+
+function renderWaterScore(ws) {
+  var color = ws.score >= 8 ? '#39ff14' :
+              ws.score >= 6 ? '#00e5ff' :
+              ws.score >= 4 ? '#ff9900' :
+              ws.score >= 2 ? '#ff6b00' : '#ff3b3b';
+  var bars = Math.round(ws.score);
+  var filled   = '█'.repeat(bars);
+  var unfilled = '░'.repeat(10 - bars);
+  return '<div id="waterScore" style="margin-bottom:14px;padding:14px 16px;background:var(--bg3);border:1px solid var(--border);border-left:3px solid '+color+';border-radius:2px">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    + '<span style="font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:2px;color:var(--text)">&#128167; Water Score</span>'
+    + '<span style="font-family:var(--mono);font-size:20px;color:'+color+';font-weight:bold">'+ws.score+'<span style="font-size:12px;color:var(--text3)">/10</span></span>'
+    + '</div>'
+    + '<div style="font-family:var(--mono);font-size:14px;letter-spacing:2px;color:'+color+';margin-bottom:10px">'+filled+unfilled+'&nbsp;<span style="font-size:11px">'+ws.label+'</span></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'
+    + _wsFact('Coverage', ws.coverage+'%')+_wsFact('Avg gap', ws.gapKm+' km')+_wsFact('Potable', ws.potablePct+'%')
+    + '</div>'
+    + '</div>';
+}
+
+function _wsFact(label, value) {
+  return '<div style="text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:2px;padding:6px 4px">'
+    + '<div style="font-family:var(--mono);font-size:14px;color:var(--accent)">'+value+'</div>'
+    + '<div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase">'+label+'</div>'
+    + '</div>';
+}
+
 function showWaterResults(pois,maxDist){
   var res=document.getElementById('waterResults'),list=document.getElementById('waterList'),count=document.getElementById('waterCount');
   clearWaterMapMarkers();
   if(!pois.length){count.textContent='No water points within '+maxDist+'m of the route';list.innerHTML='';res.style.display='block';return;}
   count.textContent=pois.length+' water points found within '+maxDist+'m';
-  list.innerHTML='';
+
+  // Water Score (only in single mode with parsedData)
+  var scoreHtml = '';
+  if (parsedData && parsedData.trackpoints) {
+    var ws = calcWaterScore(pois, parsedData.trackpoints, maxDist);
+    scoreHtml = renderWaterScore(ws);
+  }
+
+  list.innerHTML = scoreHtml;
   pois.forEach(function(poi,idx){
     var icon=getWaterIcon(poi),label=getWaterLabel(poi);
     var distStr=poi._dist<1000?Math.round(poi._dist)+'m':(poi._dist/1000).toFixed(1)+'km';
