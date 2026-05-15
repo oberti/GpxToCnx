@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## v1.0.3 — 2026-05-15
+
+### Added
+- **Water Score** — valutazione automatica 0–10 della qualità idrica del percorso
+  - Formula: Copertura 40% + Gap medio tra sorgenti 40% + Qualità potabile 20%
+  - Etichette: Excellent (≥8) / Good (≥6) / Fair (≥4) / Poor (≥2) / Critical (<2)
+  - Colori: verde / ciano / arancio / rosso in base allo score
+  - Single mode: card sopra la lista risultati con barra + 3 metriche (Coverage, Avg gap, Potable)
+  - Bulk mode: colonna Water Score nella tabella Files to Convert con barra colorata
+
+### Changed
+- Colonna Waypoints mantenuta nella tabella bulk insieme alla nuova colonna Water Score
+- Versione aggiornata a v1.0.3
+
+---
+
 ## v1.0.1 — 2026-05-15
 
 ### Added
