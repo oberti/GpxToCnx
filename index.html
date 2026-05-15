@@ -6,7 +6,7 @@
 <title>GPX → CNX | iGPSport Converter + Water Finder</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" type="image/png" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMGEwYzBmIiByeD0iNCIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iMTEiIAogICAgICAgIGZpbGw9IiMwMGU1ZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPkNOWDwvdGV4dD4KICA8cmVjdCB4PSIzIiB5PSIyNSIgd2lkdGg9IjI2IiBoZWlnaHQ9IjIiIGZpbGw9IiMwMGU1ZmYiIHJ4PSIxIiBvcGFjaXR5PSIwLjYiLz4KPC9zdmc+">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <link rel="stylesheet" href="css/style.css"/>
 </head>
@@ -30,17 +30,17 @@
   </header>
 
   <!-- STEP 1: CREATE GPX TRACK -->
-  <div class="step-header" id="step1gpx" style="margin-top:36px;border-left-color:var(--text3)">
-    <div class="step-badge" style="color:var(--text3);border-color:var(--text3);background:rgba(255,255,255,0.03)">STEP 1</div>
-    <div style="flex:1">
-      <div class="step-title" style="color:var(--text2)">&#128394; Create your GPX route</div>
-      <div class="step-sub">Don't have a GPX file yet? Design your route online with gpx.studio — free, no account needed. Export as GPX and come back here.</div>
+  <div style="margin-top:28px;padding:14px 18px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--text3);border-radius:2px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--text3);border:1px solid var(--text3);padding:3px 8px;white-space:nowrap;flex-shrink:0">STEP 1</div>
+    <div style="flex:1;min-width:160px">
+      <div style="font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:1px;color:var(--text2)">&#128394; Create your GPX route</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">No GPX yet? Use gpx.studio — free, no login.</div>
     </div>
     <a href="https://gpx.studio/it/app#13.48/45.67937/9.56904" target="_blank" rel="noopener"
-      style="display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 22px;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:2px;text-decoration:none;white-space:nowrap;transition:all .2s;flex-shrink:0"
+      style="font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 18px;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:2px;text-decoration:none;white-space:nowrap;transition:all .2s;flex-shrink:0"
       onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)'"
       onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
-      &#127758; Open gpx.studio
+      &#127758; gpx.studio
     </a>
   </div>
 
@@ -228,5 +228,6 @@
     </div>
   </div>
 </div>
+
 </body>
-</html><!-- JSZip for bulk download -->
+</html>
