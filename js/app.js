@@ -745,14 +745,18 @@ function showWaterResults(pois,maxDist){
   if(!pois.length){count.textContent='No water points within '+maxDist+'m of the route';list.innerHTML='';res.style.display='block';return;}
   count.textContent=pois.length+' water points found within '+maxDist+'m';
 
-  // Water Score (only in single mode with parsedData)
-  var scoreHtml = '';
-  if (parsedData && parsedData.trackpoints) {
-    var ws = calcWaterScore(pois, parsedData.trackpoints, maxDist);
-    scoreHtml = renderWaterScore(ws);
+  // Water Score — render in dedicated container above the list
+  var scoreContainer = document.getElementById('waterScoreContainer');
+  if (scoreContainer) {
+    if (parsedData && parsedData.trackpoints) {
+      var ws = calcWaterScore(pois, parsedData.trackpoints, maxDist);
+      scoreContainer.innerHTML = renderWaterScore(ws);
+    } else {
+      scoreContainer.innerHTML = '';
+    }
   }
 
-  list.innerHTML = scoreHtml;
+  list.innerHTML = '';
   pois.forEach(function(poi,idx){
     var icon=getWaterIcon(poi),label=getWaterLabel(poi);
     var distStr=poi._dist<1000?Math.round(poi._dist)+'m':(poi._dist/1000).toFixed(1)+'km';
@@ -866,6 +870,7 @@ function addAllWaterToRoute(){
 function clearWaterResults(){
   _waterResults=[];
   document.getElementById('waterResults').style.display='none';
+  var sc=document.getElementById('waterScoreContainer');if(sc)sc.innerHTML='';
   clearWaterMapMarkers();
 }
 function sortWaypointsByTrack(){
