@@ -2,7 +2,7 @@
 
 Browser-based tool to convert **GPX route files** into **CNX format** for iGPSport cycling computers (iGS series), with automatic search for **drinking fountains and water points** along the route via OpenStreetMap.
 
-🌐 **[Try it on Pitstopper.net](https://pitstopper.net/)** &nbsp;·&nbsp; **v1.0.1**
+🌐 **[Try it on Pitstopper.net](https://pitstopper.net/)
 
 > No server · No installation · No API key — just open `index.html` in your browser.
 
@@ -23,8 +23,10 @@ Browser-based tool to convert **GPX route files** into **CNX format** for iGPSpo
 ---
 
 ## Features
+### Create gpx standard (STEP 1)
+- create gpx standard tracks with gpxstudio web app
 
-### Water Finder (STEP 1)
+### Water Finder (STEP 2)
 - Search via **Overpass API** (OpenStreetMap) — free, no API key required
 - 6 source types: fountains, taps, springs, decorative fountains, water points, non-potable
 - Max distance from route: adjustable 50m–1000m (default 100m)
@@ -50,7 +52,7 @@ Browser-based tool to convert **GPX route files** into **CNX format** for iGPSpo
 - Auto-sorted by distance from start (#1 = closest to beginning)
 - Blue-tinted rows for added water points
 
-### Export (STEP 2)
+### Export (STEP 3)
 | Button | Output | When visible |
 |--------|--------|--------------|
 | 💧 Save GPX+H₂O | `.gpx` with all waypoints | After adding ≥1 water point |
