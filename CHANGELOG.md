@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## v1.0.1 — 2026-05-15
+
+### Added
+- **STEP 1 — Create GPX route**: new introductory step with direct link to [gpx.studio](https://gpx.studio/it/app#13.48/45.67937/9.56904) for users who need to draw their route before converting
+- Water Finder renamed to **STEP 2**, Convert to CNX renamed to **STEP 3**
+
+### Changed
+- Version badge updated to v1.0.1 in header
+
+---
+
 ## v1.0.0 — 2025-05-14
 
 First stable release.

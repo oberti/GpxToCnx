@@ -1,133 +1,232 @@
-# Changelog
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPX → CNX | iGPSport Converter + Water Finder</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" type="image/png" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMGEwYzBmIiByeD0iNCIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc2l6ZT0iMTEiIAogICAgICAgIGZpbGw9IiMwMGU1ZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGxldHRlci1zcGFjaW5nPSIwLjUiPkNOWDwvdGV4dD4KICA8cmVjdCB4PSIzIiB5PSIyNSIgd2lkdGg9IjI2IiBoZWlnaHQ9IjIiIGZpbGw9IiMwMGU1ZmYiIHJ4PSIxIiBvcGFjaXR5PSIwLjYiLz4KPC9zdmc+">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="wrapper">
 
-All notable changes to this project will be documented in this file.
+  <header>
+    <div>
+      <div class="logo-row">
+        <span class="logo-main">GPX</span>
+        <span class="logo-arrow">&#10230;</span>
+        <span class="logo-main">CNX</span>
+      </div>
+      <div class="logo-sub">iGPSport Converter + Water Finder</div>
+      <div style="font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--accent);opacity:0.6;margin-top:4px">v1.0.1</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="badge">iGPSport CNX v2</div>
+      <a href="https://pitstopper.net/" target="_blank" rel="noopener" class="header-link">&#9981; Pitstopper.net</a>
+    </div>
+  </header>
 
----
+  <!-- STEP 1: CREATE GPX TRACK -->
+  <div class="step-header" id="step1gpx" style="margin-top:36px;border-left-color:var(--text3)">
+    <div class="step-badge" style="color:var(--text3);border-color:var(--text3);background:rgba(255,255,255,0.03)">STEP 1</div>
+    <div style="flex:1">
+      <div class="step-title" style="color:var(--text2)">&#128394; Create your GPX route</div>
+      <div class="step-sub">Don't have a GPX file yet? Design your route online with gpx.studio — free, no account needed. Export as GPX and come back here.</div>
+    </div>
+    <a href="https://gpx.studio/it/app#13.48/45.67937/9.56904" target="_blank" rel="noopener"
+      style="display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 22px;background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:2px;text-decoration:none;white-space:nowrap;transition:all .2s;flex-shrink:0"
+      onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)'"
+      onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--text2)'">
+      &#127758; Open gpx.studio
+    </a>
+  </div>
 
-## v1.0.1 — 2026-05-15
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="single">Single File</div>
+    <div class="mode-tab" data-mode="bulk">Bulk Convert</div>
+  </div>
 
-### Added
-- **STEP 1 — Create GPX route**: new introductory step with direct link to [gpx.studio](https://gpx.studio/it/app#13.48/45.67937/9.56904) for users who need to draw their route before converting
-- Water Finder renamed to **STEP 2**, Convert to CNX renamed to **STEP 3**
+  <!-- DROP ZONE -->
+  <div class="dropzone" id="dropzone">
+    <span class="drop-icon">&#128225;</span>
+    <div class="drop-title" id="dropTitle">Drop GPX file here</div>
+    <div class="drop-sub">or <span id="browseLink">browse files</span> &mdash; .gpx only</div>
+    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <input type="file" id="fileInput" accept=".gpx">
+  <div class="file-list" id="fileList"></div>
 
-### Changed
-- Version badge updated to v1.0.1 in header
+  <!-- STATS -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-cell"><span class="stat-label">Distance</span><span class="stat-value" id="statDist">-</span><span class="stat-unit">km</span></div>
+    <div class="stat-cell"><span class="stat-label">Ascent</span><span class="stat-value" id="statAsc">-</span><span class="stat-unit">m up</span></div>
+    <div class="stat-cell"><span class="stat-label">Descent</span><span class="stat-value" id="statDes">-</span><span class="stat-unit">m down</span></div>
+    <div class="stat-cell"><span class="stat-label">Trackpoints</span><span class="stat-value" id="statTP">-</span><span class="stat-unit">pts</span></div>
+    <div class="stat-cell"><span class="stat-label">Waypoints</span><span class="stat-value" id="statWP">-</span><span class="stat-unit">POIs</span></div>
+  </div>
 
----
+  <!-- TRACK NAME -->
+  <div class="track-name-row" id="trackNameRow">
+    <span class="track-name-label">Route Name</span>
+    <input type="text" class="track-name-input" id="trackNameInput" maxlength="50" oninput="updateCharCount()">
+    <span class="char-counter" id="charCounter">0/18</span>
+  </div>
 
-## v1.0.0 — 2025-05-14
 
-First stable release.
+  <!-- Elevation missing banner -->
+  <div id="elevFetchBanner" style="display:none;align-items:center;gap:14px;margin-top:16px;padding:14px 18px;background:rgba(255,107,0,0.08);border:1px solid rgba(255,107,0,0.4);border-radius:2px;flex-wrap:wrap">
+    <span style="font-size:20px">&#9000;</span>
+    <div style="flex:1;min-width:200px">
+      <div style="font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:1px;color:#ff6b00">No elevation data in this GPX</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:3px">Altitude profile will be flat. Fetch real elevation from OpenStreetMap?</div>
+    </div>
+    <span id="elevFetchStatus" style="font-family:var(--mono);font-size:11px;color:var(--accent)"></span>
+    <button onclick="fetchElevation(parsedData.trackpoints,function(){var e=parsedData.trackpoints.map(function(p){return p.ele;});document.getElementById('elevInfo').textContent=Math.round(Math.min.apply(null,e))+'m - '+Math.round(Math.max.apply(null,e))+'m';parsedData.stats=calcStats(parsedData.trackpoints);document.getElementById('statAsc').textContent=Math.round(parsedData.stats.asc);document.getElementById('statDes').textContent=Math.round(Math.abs(parsedData.stats.des));drawElevation(parsedData.trackpoints,parsedData.waypoints);})" style="font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:9px 18px;background:#ff6b00;color:#000;border:none;cursor:pointer;border-radius:2px;white-space:nowrap">&#9000; Fetch Elevation</button>
+    <button onclick="dismissElevBanner()" style="font-family:var(--mono);font-size:11px;background:transparent;color:var(--text3);border:1px solid var(--border2);padding:8px 12px;cursor:pointer;border-radius:2px">Dismiss</button>
+  </div>
 
-### Core Conversion
-- GPX → CNX encoding — exact byte match with LudvvigB/GPXtoCNXConverter Python reference
-- Multi-track / multi-segment merge — all `<trk>` and `<trkseg>` elements flattened into one CNX route (sidkurt/GPXtoCNXConverter logic)
-- Delta compression encoding (`<Encode>2</Encode>`) with correct ROUND_HALF_UP rounding
-- UTF-8 BOM output (`utf-8-sig`) matching iGPSport device requirements
-- 3D Haversine distance (includes elevation delta)
-- Original GPX coordinate strings preserved for first trackpoint precision
-- Fallback: `<rte>/<rtept>` if no `<trk>` found (Komoot/Google Maps exports)
+  <!-- STEP 2: WATER FINDER -->
+  <div id="waterSection" style="display:none">
+    <div class="step-header">
+      <div class="step-badge">STEP 2</div>
+      <div>
+        <div class="step-title">&#128167; Water Finder</div>
+        <div class="step-sub">Find drinking fountains and water points near your route via OpenStreetMap</div>
+      </div>
+    </div>
 
-### Water Finder
-- Overpass API integration — ported from jsleroy/thirsty core.py
-- 7 water source types: Fountains, Taps, Springs, Decorative Fountains, Water Points, Watering Places, Non-potable
-- Point-to-segment distance algorithm (not point-to-point) — finds sources perpendicular to track
-- 4 Overpass endpoints with automatic fallback cascade:
-  - overpass-api.de
-  - overpass.kumi.systems
-  - overpass.openstreetmap.fr
-  - overpass-api.nchc.org.tw
-- Per-endpoint retry logic (2 retries, 2s delay) before moving to next server
-- 60s timeout for bulk queries
-- Status log below Find Water button — shows server attempts line by line
-- Single mode: one query per route
-- Bulk mode: one merged bbox query for all routes, filtered client-side per file
+    <div class="water-controls">
+      <div class="water-row">
+        <div class="water-col">
+          <div class="wlabel">Water type</div>
+          <div class="wtype-grid">
+            <label class="wchk"><input type="checkbox" value="water" checked><span>&#128167; Fountains</span></label>
+            <label class="wchk"><input type="checkbox" value="tap" checked><span>&#128268; Taps</span></label>
+            <label class="wchk"><input type="checkbox" value="spring" checked><span>&#127956; Springs</span></label>
+            <label class="wchk"><input type="checkbox" value="fountain" checked><span>&#9975; Decorative Fountains</span></label>
+            <label class="wchk"><input type="checkbox" value="point" checked><span>&#127890; Water Points</span></label>
+            <label class="wchk"><input type="checkbox" value="watering_place" checked><span>&#128052; Watering Places</span></label>
+            <label class="wchk"><input type="checkbox" value="non-potable" checked><span>&#9940; Non-potable</span></label>
+          </div>
+        </div>
+        <div class="water-col">
+          <div class="wlabel">Max distance from route</div>
+          <div class="slider-row">
+            <input type="range" id="waterDist" min="50" max="1000" step="50" value="100"
+              oninput="document.getElementById('waterDistVal').textContent=this.value+'m'">
+            <span class="slider-val" id="waterDistVal">100m</span>
+          </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-water" id="waterSearchBtn" onclick="findWater()">
+              <span id="waterBtnIcon">💧</span> Find Water
+            </button>
+          </div>
+          <div id="waterStatus" style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:1px;line-height:1.8;min-height:18px"></div>
+        </div>
+      </div>
+    </div>
 
-### Map
-- Leaflet 1.9.4 + OpenStreetMap tiles
-- Track polyline with glow effect
-- Numbered markers: green = start, red = end, orange = waypoints, blue = water
-- Water marker popup with potable/non-potable indicator and Add to route button
-- Water legend item shown/hidden dynamically
-- **Bidirectional map ↔ table link**: click marker → highlights table row + scroll; click row → pans map + opens popup
+    <!-- Water results -->
+    <div id="waterResults" style="display:none">
+      <div class="water-results-hdr">
+        <span class="water-count" id="waterCount"></span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-water-sm" onclick="addAllWaterToRoute()">+ Add all to route</button>
+          <button class="btn btn-water-sm sec" onclick="clearWaterResults()">&#10005; Clear results</button>
+        </div>
+      </div>
+      <div class="water-list" id="waterList"></div>
+    </div>
+  </div>
 
-### Elevation Profile
-- Canvas chart with gradient fill
-- Waypoint markers numbered 1→N from start (orange = POI, blue = water)
-- Glow behind each marker dot
-- Dashed vertical line from baseline to dot
-- Badge flips below dot if too close to top edge
-- Hover crosshair with km + elevation tooltip
-- Retry on zero-width canvas (display:none timing fix)
-- Fallback: computes `_tpIdx` on the fly if missing
+  <!-- MAP -->
+  <div id="mapSection" style="display:none">
+    <div class="section-header">
+      <span class="section-title">Route Map</span>
+      <span class="section-count" id="mapInfo"></span>
+    </div>
+    <div id="mapContainer">
+      <div class="map-legend">
+        <div class="legend-row"><div class="legend-line"></div>Track</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#39ff14"></div>Start</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff3b3b"></div>End</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff6b00"></div>Waypoint</div>
+        <div class="legend-row" id="legendWater" style="display:none"><div class="legend-dot" style="background:#00bfff"></div>Water</div>
+      </div>
+    </div>
+  </div>
 
-### Elevation Fetch
-- Detects GPX files with no elevation data (all `ele=0`)
-- Banner with **Fetch Elevation** button — calls Open-Elevation API
-- Batched requests (200 points per batch) with progress indicator
-- Dismissable if user prefers to skip
+  <!-- STEP 3: CONVERT -->
+  <div id="step2header" style="display:none">
+    <div class="step-header" style="margin-top:8px">
+      <div class="step-badge">STEP 3</div>
+      <div>
+        <div class="step-title">&#11015; Convert to CNX</div>
+        <div class="step-sub">Edit waypoints and export for iGPSport</div>
+      </div>
+    </div>
+  </div>
 
-### POI Table
-- 23 iGPSport POI types selectable per waypoint
-- Inline rename, type change, remove
-- Auto-sorted by distance from start
-- Blue tint + 💧 icon for water-origin waypoints
-- Click row → focus map marker (ignores clicks on input/select/button)
-- Mobile: Coordinates column hidden on small screens, select max-width responsive
+  <!-- ELEVATION -->
+  <div class="section" id="elevSection">
+    <div class="section-header">
+      <span class="section-title">Elevation Profile</span>
+      <span class="section-count" id="elevInfo"></span>
+    </div>
+    <canvas id="elevationCanvas"></canvas>
+  </div>
 
-### CNX Preview Modal (single mode)
-- Shows filename, distance, ascent, descent, trackpoints, waypoint count
-- Waypoint table with: #, km from start, name, type badge (blue = water, orange = POI)
-- Truncation warning if route name exceeds 18 characters
-- Cancel button closes without downloading
+  <!-- WAYPOINTS TABLE -->
+  <div class="section" id="poiSection">
+    <div class="section-header">
+      <span class="section-title">Waypoints / POIs</span>
+      <span class="section-count" id="poiCount"></span>
+    </div>
+    <div class="poi-scroll">
+      <table class="poi-table">
+        <thead><tr><th>#</th><th>Name (Descr)</th><th>Coordinates</th><th>Type</th><th></th></tr></thead>
+        <tbody id="poiBody"></tbody>
+      </table>
+    </div>
+  </div>
 
-### Bulk Mode
-- Drag & drop multiple GPX files
-- Parse all files simultaneously
-- Water Finder searches merged bbox (one Overpass request for all files)
-- Files to Convert table shows CNX output filename for each file
-- Preview modal: summary stats + per-file table with distance, ascent, water count
-- Sequential download (600ms between files) — avoids browser multiple-download popup
-- Individual ⬇ CNX button per file for selective download
+  <!-- ACTIONS -->
+  <div class="actions" id="actions">
+    <button class="btn btn-water" id="saveGpxBtn" onclick="saveGPXwithWater()" style="display:none">&#128167; Save GPX+H&#8322;O</button>
+    <button class="btn btn-primary" id="convertBtn" onclick="convertAndDownload()">&#11015; Download CNX</button>
+    <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
+    <span class="convert-info" id="convertInfo"></span>
+  </div>
 
-### File Naming
-- Output filename derived from original GPX filename (not internal route name)
-- `_H2O` suffix added automatically if file contains water waypoints
-- Example: `Bergamo-Alpi_2024_H2O.cnx`
+</div><!-- /wrapper -->
 
-### GPX Export
-- Save GPX+H₂O — exports enriched GPX with all waypoints including water
-- Water waypoints tagged with `<sym>water-drop</sym>` and `<type>water</type>`
-- Appears only after adding at least one water point
-- Compatible with Komoot, Garmin, Wahoo, Strava
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toastMsg"></span></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/app.js"></script>
 
-### Data Quality
-- Filters `(0,0)` coordinates — GPS points with no fix
-- Median-based outlier removal — drops points more than 200km from track center
-- Route name truncation preview — shows exact 18-char result before download
-- Coordinate precision: 7 decimal places preserved from original GPX
-
-### UI / UX
-- Dark cyber theme — CSS variables, grid layout
-- Drag & drop with drag-over visual feedback
-- Progress bar on file load
-- Stats bar: distance, ascent, descent, trackpoints, waypoints
-- Route name editor with live character counter (red + tooltip when over 18)
-- Toast notifications (success / error / water types)
-- Fade-in animations on panel reveal
-- Responsive: works on mobile and desktop
-
-### Technical
-- Zero dependencies except Leaflet (CDN) — no build step, no server
-- Single HTML file option (`preview.html`) for offline use
-- `Blob` + `URL.createObjectURL` download with UTF-8 BOM
-- `AbortController` timeout on all fetch calls
-- Works on GitHub Pages as-is
-
-### Credits
-- CNX format: [LudvvigB/GPXtoCNXConverter](https://github.com/LudvvigB/GPXtoCNXConverter)
-- Multi-track merge: [sidkurt/GPXtoCNXConverter](https://github.com/sidkurt/GPXtoCNXConverter)
-- Water Finder logic: [jsleroy/thirsty](https://github.com/jsleroy/thirsty)
-- Water data: © OpenStreetMap contributors via Overpass API
-- Map tiles: © OpenStreetMap contributors
-- Built for [Pitstopper.net](https://pitstopper.net/)
+<!-- CNX Preview Modal -->
+<div id="cnxPreviewModal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeCnxPreview()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">&#10003; CNX Preview</span>
+      <button class="modal-close" onclick="closeCnxPreview()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-fname" id="previewFname"></div>
+      <div id="previewTruncWarn" style="display:none;margin-bottom:12px;padding:8px 12px;background:rgba(255,107,0,0.1);border:1px solid rgba(255,107,0,0.4);border-radius:2px;font-family:var(--mono);font-size:11px;color:#ff6b00;letter-spacing:1px"></div>
+      <div class="modal-stats" id="previewStats"></div>
+      <div class="modal-wpt-title" id="previewWptTitle"></div>
+      <div class="modal-wpt-list" id="previewWptList"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" style="padding:10px 24px" onclick="closeCnxPreview()">Cancel</button>
+        <button class="btn btn-primary" style="padding:10px 24px" id="cnxConfirmBtn" onclick="confirmDownloadCnx()">&#11015; Download CNX</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html><!-- JSZip for bulk download -->
